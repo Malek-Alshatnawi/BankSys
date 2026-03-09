@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace BankSys.Models;
+namespace LoanSys.Models;
 
 [Index("Email", Name = "UQ__Customer__A9D105342070D327", IsUnique = true)]
 [Index("NationalId", Name = "UQ__Customer__E9AA32FA39276D41", IsUnique = true)]
@@ -34,9 +34,6 @@ public partial class Customer
 
     [Column(TypeName = "decimal(18, 2)")]
     public decimal? MonthlyIncome { get; set; }
-
-    [InverseProperty("Customer")]
-    public virtual ICollection<Account> Accounts { get; set; } = new List<Account>();
 
     [InverseProperty("Customer")]
     public virtual ICollection<Loan> Loans { get; set; } = new List<Loan>();

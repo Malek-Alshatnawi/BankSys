@@ -3,6 +3,7 @@ using BankSys.Enums;
 using BankSys.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Identity.Client;
+using System.Net.WebSockets;
 
 namespace BankSys.Repositories
 {
@@ -56,6 +57,10 @@ namespace BankSys.Repositories
             if (!CheckDestinationAccount) return TransferResults.TheAccountThatYouAreTransferToIsNotExist;
             if (tr.amount <= 0) return TransferResults.TheAmountShouldBeMoreThanZero;
             if (tr.fromAccountNumber == tr.toAccountNumber) return TransferResults.TheSourceAccountAndDestinationAccountIsTheSame;
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+            var TotalTransferAmount = await db.Transactions.Where(t => t.Account.AccountNumber == tr.fromAccountNumber && t.TransactionType == "Debit" && t.CreatedAt >= today && t.CreatedAt < tomorrow).SumAsync(t => t.Amount);
+            if (TotalTransferAmount + tr.amount > 10000) return TransferResults.YouReachedTheDailyMaximumTransferLimit;
             else
             {
                 using var transaction = await db.Database.BeginTransactionAsync();
@@ -190,21 +195,65 @@ namespace BankSys.Repositories
         }
 
 
-        //public async Task<Lst24Hours3DtrxAccLISTDTO> GetAcctrxlast24H ()
-        //{
-        //    var since = DateTime.Now.AddHours(-24);
-        //    var r = await db.Accounts.Where(a => a.Transactions.Where(t => t.TransactionType == "Debit" && t.CreatedAt > since && t.Amount > 100).Count() > 3).ToListAsync();
-
-        //}
 
 
+        public async Task<string> CreateAccount(CreateAccountDTO cdt)
+        {
+            var CheckAccNumber = await db.Accounts.AnyAsync(a => a.AccountNumber == cdt.AccountNumber);
+            if (CheckAccNumber) return "The Account number is already exist";
+            var ChechIfTheCustomerIdExist = await db.Customers.AnyAsync(c => c.Id == cdt.CustomerId);
+            if (!ChechIfTheCustomerIdExist) return "The provided customer id is not exist";
+            if (cdt.Balance <= 0) return "The balance should me more than zero";
+          
+                Account a = new Account()
+                {
+                    AccountNumber = cdt.AccountNumber,
+                    Balance = cdt.Balance,
+                    CustomerId=cdt.CustomerId,
+                    AccountType = cdt.AccountType,
+                    IsActive = cdt.IsActive
+                };
+            db.Accounts.Add(a);
+            db.SaveChanges();
+            return "The account has been created successfully"; 
+        }
 
+        public async Task <String> CloseAccount (int AccountId)
+        {
+            var checkAccount = await db.Accounts.FindAsync(AccountId);
+            if (checkAccount == null) return "The account id is not esixt";
+            if (checkAccount.IsFrozen) return "The account is already frozen";
+            if (checkAccount.Balance != 0) return "The account balance should be zero";
+            else
+            {
+                await db.Accounts.Where(a=> a.Id == AccountId).ExecuteUpdateAsync(e => e.SetProperty(a => a.IsFrozen, true));
+                return "The account has been closed succsessfully";
+            }
+        }
 
+        public async Task<String> UpdateAccountType (String AccountType, int accountid)
+        {
+            var account = await db.Accounts.FindAsync(accountid);
+            if (account.AccountType == AccountType) return "The account type is already exist";
+            //await db.Accounts.Where(a => a.Id == accountid).ExecuteUpdateAsync(s => s.SetProperty(a=> a.AccountType, AccountType));
+            account.AccountType = AccountType;
+            await db.SaveChangesAsync();
+            return "The account Type has been canged successfully";
+        }
 
-
-
-
-
+        public async Task <List<AccWithNoTrxInlast10Days>> GetAccWithNoTrxInlast10Days()
+        {
+            var since = DateTime.Today.AddDays(-10);
+            var res = db.Accounts.AsNoTracking().Where(a => !a.Transactions.Any(t => t.CreatedAt > since)).Select(a => new AccWithNoTrxInlast10Days
+            {
+                AccountNumber = a.AccountNumber,
+                CustomerName = a.Customer.FullName,
+                Balance = a.Balance,
+                LastTransactionDate = a.Transactions.OrderByDescending(t => t.CreatedAt).Select(t => t.CreatedAt).FirstOrDefault()
+            }
+            ).OrderByDescending(a=>a.Balance).ToList();
+            return res;
+        }
 
 
 

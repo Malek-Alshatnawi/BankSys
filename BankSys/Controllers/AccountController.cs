@@ -63,12 +63,12 @@ namespace BankSys.Controllers
             if (r == TransferResults.TheAmountShouldBeMoreThanZero) return BadRequest("The amount should be greater than zero");
             if (r == TransferResults.YouDontHaveInsuficiantbalance) return BadRequest("insuficiant balance!");
             if (r == TransferResults.TheSourceAccountAndDestinationAccountIsTheSame) return BadRequest("Source and Destination accoutns are same its not allowed !");
+            if (r == TransferResults.YouReachedTheDailyMaximumTransferLimit) return BadRequest("You Reached The Daily Maximum Transfer Limit");
             if (r == TransferResults.TheTransferCompletedSuccessfully)
                 return Ok(new
                 {
                     success = true,
                     message = "The trasnfer completed successfully",
-                    data = r
 
                 });
             else return null;
@@ -135,7 +135,7 @@ namespace BankSys.Controllers
 
 
 
-        [HttpPost("{accountnumber}")]
+        [HttpPost]
         [SwaggerOperation(summary: "Here you can freeze an  account", description: "please make sure that the account number is exist")]
         public async Task<IActionResult> FreezeAccount(String accountnumber)
         {
@@ -171,27 +171,42 @@ namespace BankSys.Controllers
 
 
 
+ 
 
 
         [HttpPost("{customerid}")]
         [SwaggerOperation(summary: "Here you can atestttt", description: "please make sure that the account number is exist")]
         public async Task<IActionResult> testttt(int customerid)
         {
-            //var since = DateTime.Now.AddHours(-24);
-            //var r = await db.Accounts.Where(a => a.Transactions.Where(t => t.TransactionType == "Debit" && t.CreatedAt > since && t.Amount > 100).Count() > 3)
-            //    .Select(a=> new Lst24Hours3DtrxAccDTO
-            //    {
-            //         AccountNumber= a.AccountNumber,
-            //            customerName = a.Customer.FullName,
-            //        recentWithdrawals = a.Transactions.Where(t => t.TransactionType == "Debit" && t.CreatedAt > since && t.Amount > 100).Select(t=> new Lst24Hours3DtrxAccLISTDTO
-            //        {
-            //            amount = t.Amount,
-            //            date = t.CreatedAt
-            //        }).ToList()
+            var r = await db.Customers.AsNoTracking().Where(
+                c => c.Accounts.Count> 1 &&
+                c.Accounts.Sum(a=> a.Balance) > 20000 &&
+                !c.Accounts.Any(a=> a.IsFrozen)
+                ).ToListAsync();
+            return Ok(r);
+        }
+        // var since = DateTime.Now.AddHours(-24);
+        //  var r = await db.Accounts.Where(a => a.Transactions.Where(t => t.TransactionType == "Debit" && t.CreatedAt > since && t.Amount > 100).Count() > 3)
+        //      .Select(a=> new Lst24Hours3DtrxAccDTO
+        //      {
+        //           AccountNumber= a.AccountNumber,
+        //              customerName = a.Customer.FullName,
+        //          recentWithdrawals = a.Transactions.Where(t => t.TransactionType == "Debit" && t.CreatedAt > since && t.Amount > 100).Select(t=> new Lst24Hours3DtrxAccLISTDTO
+        //          {
+        //              amount = t.Amount,
+        //              date = t.CreatedAt
+        //          }).ToList()
 
-            //    }).ToListAsync();
-            //return Ok(r);
+        //      }).ToListAsync();
+        //  return Ok(r);
+            
+            /*this is TopAccountDTO return AllowCookieRedirectAttribute accounts that is not frozen and the balance is not zero  and they didn't do any trx in the last 90 days
+            var since = DateTime.Now.AddDays(-90);
+            var r = db.Accounts.AsNoTracking().Where(a => a.Balance > 0 && !a.IsFrozen == false && !a.Transactions.Any(t=>t.CreatedAt > since)).ToListAsync();
+            return Ok(r);*/
 
+
+        //}
 
 
 
@@ -250,23 +265,81 @@ namespace BankSys.Controllers
 
 
 
-           var since = DateTime.Now.AddDays(-20);
-           var r = db.Accounts.AsNoTracking().Where(a =>
-           !a.IsFrozen &&
-           a.Transactions.Any(t1 => t1.TransactionType == "Deposit" && t1.CreatedAt > since 
-           return Ok(r);
+            //var since = DateTime.Now.AddDays(-20);
+            //var r = db.Accounts.AsNoTracking().Where(a =>
+            //!a.IsFrozen &&
+            //a.Transactions.Any(t1 => t1.TransactionType == "Deposit" && t1.CreatedAt > since 
+            //return Ok(r);
 
 
 
+
+        //}
+
+
+
+
+        [HttpPost]
+        [SwaggerOperation(summary: "Here you add a new account", description: "please make sure that the account number is uniqe and the balabnce is more than zero")]
+        public async Task<IActionResult> AddAccount(CreateAccountDTO account)
+        {
+            if (account == null) return BadRequest("Null reuqest, please fill the fields");
+            var r = await repo.CreateAccount(account);
+            if (r == "The Account number is already exist") return BadRequest("The provided account number already exists");
+            if (r == "The balance should me more than zero") return BadRequest("The initial balance should be more than zero");
+            if (r == "The provided customer id is not exist") return BadRequest("The provided customer id is not exist");
+            if (r == "The account has been created successfully") return Ok(new
+            {
+                success = true,
+                message = "The account has been created successfully"
+            });
+            else return null;}
+
+
+
+
+        [HttpPost("{AccountId}")]
+        [SwaggerOperation(summary: "Here you can  close an account", description: "please make sure that the account number is exist and is not already frozen")]
+        public async Task<IActionResult> CloseAccount (int AccountId)
+        {
+            if (AccountId == null) return BadRequest("Please fill the account id");
+            var r = await repo.CloseAccount(AccountId);
+            if (r == "The account id is not esixt") return BadRequest("The account id is not esixt");
+            if (r == "The account is already frozen") return BadRequest("TThe account is already frozen");
+            if (r == "The account balance should be zero") return BadRequest("The account balance should be zero");
+            if (r == "The account has been closed succsessfully") return Ok(new {isuccess= true, message= "The account has been closed succsessfully" });
+            return null;
+        }
+
+
+        [HttpPut]
+        [SwaggerOperation(summary: "Here you can  update the account type", description: "please make sure that the account id is exist")]
+        public async Task <IActionResult> UpdateAccountType (String AccountType,int accountid)
+        {
+            var r = await repo.UpdateAccountType(AccountType, accountid);
+            if (r == "The account type is already exist") return BadRequest($"The account type is already {AccountType}");
+            //if (r == "The account Type has been canged successfully") return Ok(new { issuccess = true, message = "The account Type has been canged successfull" });
+            if (accountid == null) return BadRequest("Please fill the account id ");
+            if (AccountType == null) return BadRequest("Please fill the AccountType ");
+            else return Ok(new { issuccess = true, message = "The account Type has been canged successfull" });
 
         }
 
 
+        [HttpGet]
+        [SwaggerOperation(summary: "Here you can  get the account that does't have a transaction in the ;last 10 days", description: "")]
+        public async Task <IActionResult> GetAccWithNoTrxInlast10Days()
+        {
+            var r = repo.GetAccWithNoTrxInlast10Days();
+            return Ok(new
+            {
+                issuccess = true,
+                message = "The account details feched successfully",
+                data = r
 
-
-
+            });
+        }
 
 
     }
-
 }

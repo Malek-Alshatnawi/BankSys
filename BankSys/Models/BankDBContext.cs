@@ -8,6 +8,10 @@ namespace BankSys.Models;
 
 public partial class MyDBContext : DbContext
 {
+    public MyDBContext()
+    {
+    }
+
     public MyDBContext(DbContextOptions<MyDBContext> options)
         : base(options)
     {
@@ -19,9 +23,18 @@ public partial class MyDBContext : DbContext
 
     public virtual DbSet<Customer> Customers { get; set; }
 
+    public virtual DbSet<Loan> Loans { get; set; }
+
+    public virtual DbSet<LoanInstallment> LoanInstallments { get; set; }
+
+    public virtual DbSet<LoanPayment> LoanPayments { get; set; }
+
+    public virtual DbSet<Product> Products { get; set; }
+
     public virtual DbSet<Transaction> Transactions { get; set; }
 
     public virtual DbSet<Transfer> Transfers { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,6 +60,47 @@ public partial class MyDBContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Customer__3214EC075F60B25C");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.MonthlyIncome)
+                .HasDefaultValue(1000m)
+                .HasAnnotation("Relational:DefaultConstraintName", "DF_Customers_MonthlyIncome");
+        });
+
+        modelBuilder.Entity<Loan>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Loans__3214EC0744D4D5B5");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.Loans)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Loans_Customers");
+        });
+
+        modelBuilder.Entity<LoanInstallment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__LoanInst__3214EC07EDD31E93");
+
+            entity.HasOne(d => d.Loan).WithMany(p => p.LoanInstallments)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Installments_Loan");
+        });
+
+        modelBuilder.Entity<LoanPayment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__LoanPaym__3214EC07A10FEA06");
+
+            entity.Property(e => e.PaidAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Loan).WithMany(p => p.LoanPayments)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Payments_Loan");
+        });
+
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Products__3214EC07D6DCE4AF");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
         });
 
         modelBuilder.Entity<Transaction>(entity =>

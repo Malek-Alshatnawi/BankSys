@@ -11,17 +11,13 @@
    "OutputPath": "Models",
    "PluralRules": null,
    "PreserveCasingWithRegex": true,
-   "ProjectRootNamespace": "BankSys",
+   "ProjectRootNamespace": "LoanSys",
    "Schemas": null,
    "SelectedHandlebarsLanguage": 2,
    "SelectedToBeGenerated": 0,
    "SingularRules": null,
    "T4TemplatePath": null,
    "Tables": [
-      {
-         "Name": "[dbo].[Accounts]",
-         "ObjectType": 0
-      },
       {
          "Name": "[dbo].[ApiLogs]",
          "ObjectType": 0
@@ -40,18 +36,6 @@
       },
       {
          "Name": "[dbo].[Loans]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Products]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Transactions]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Transfers]",
          "ObjectType": 0
       }
    ],

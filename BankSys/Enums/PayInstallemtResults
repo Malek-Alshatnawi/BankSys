@@ -1,0 +1,10 @@
+﻿namespace BankSys.Enums
+{
+    public enum PayInstallemtResults
+    {
+        Success,
+        LoanNotFound,
+        ThereIsNoUnpaidInstallmetnsForThisLoan,
+        InvalidAmount
+    }
+}

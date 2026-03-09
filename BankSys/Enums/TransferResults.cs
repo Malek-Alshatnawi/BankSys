@@ -8,6 +8,7 @@
         TheAmountShouldBeMoreThanZero,
         YouDontHaveInsuficiantbalance,
         TheTransferCompletedSuccessfully,
+        YouReachedTheDailyMaximumTransferLimit,
         Null
 
     }

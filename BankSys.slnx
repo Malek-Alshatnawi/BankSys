@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="BankSys/BankSys.csproj" />
+  <Project Path="LoanSys/LoanSys.csproj" Id="e4fbe418-dbf5-4191-a27f-83559afd3bb0" />
 </Solution>

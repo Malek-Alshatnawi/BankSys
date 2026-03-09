@@ -86,6 +86,58 @@ namespace BankSys.Repositories
             return r;
         }
 
+        public async Task <String> DeleteCustomerById(int customerid)
+        {
+            var r = db.Customers.Find(customerid);
+            if (r == null) return "The mentioned customer id is not exist";
+            var checkaccounts = db.Accounts.Any(a => a.CustomerId == customerid);
+            if (checkaccounts) return "The mentioned customer id has accounts  can't be deleted";
+            db.Customers.Remove(r);
+            db.SaveChanges();
+            return "The customer has been deleted successfully";
+        }
+
+        public async Task <String> CreateCustomer (CreateCustomerDTO cr)
+        {
+            Customer c = new Customer
+            {
+                FullName=cr.FullName,
+                NationalId= cr.NationalId,
+                Phone = cr.Phone,
+                CreatedAt = DateTime.UtcNow,
+                Email=cr.Email
+            };
+
+            await db.Customers.AddAsync(c);
+            await db.SaveChangesAsync();
+            return "The customer added succssffully";
+        }
+
+        public async Task <int> Importproducts()
+        {
+            HttpClient client = new HttpClient();
+            var res = await client.GetFromJsonAsync<ExternalProductsResponse>("https://dummyjson.com/products");
+            var productstable = await db.Products.ToListAsync();
+            int addedCount =0;
+            foreach (var p in res.Products)
+            { 
+            await db.Products.AddAsync(new Product
+            {
+                Name = p.Title,
+                Price = p.Price,
+                Brand = p.Brand,
+                CreatedAt = DateTime.UtcNow,
+                ExternalId = p.Id
+
+            });
+             await db.SaveChangesAsync();
+                addedCount++;
+            }
+            return addedCount;
+        }
+
+
+
 
 
 

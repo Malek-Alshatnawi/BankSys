@@ -1,12 +1,11 @@
 
 using BankSys.Middleware;
-using BankSys.Models;
-using BankSys.Repositories;
+using LoanSys.Models;
 using LoanSys.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
-namespace BankSys
+namespace LoanSys
 {
     public class Program
     {
@@ -14,12 +13,6 @@ namespace BankSys
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            
-
-            builder.Services.AddScoped<CustomerRepository>();
-            builder.Services.AddScoped<AccountRepository>();
-            builder.Services.AddScoped<TransactionRepository>();
-            builder.Services.AddScoped<TransferRepository>();
             builder.Services.AddScoped<LoanRepo>();
 
 
